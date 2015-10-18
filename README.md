@@ -42,7 +42,9 @@ The poll function must be called on the server object regularly so that it can
 handle new and existing connections. The poll function accepts a timeout value
 in milliseconds -- if this is set to `0` then the function will not block.
 ```c
-sb_poll_server(srv, 1000);
+for (;;) {
+  sb_poll_server(srv, 1000);
+}
 ```
 
 When we are done with the server the `sb_close_server()` function can be called
