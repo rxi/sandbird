@@ -259,8 +259,8 @@ static void sb_buffer_deinit(sb_Buffer *buf) {
 
 
 static void sb_buffer_shift(sb_Buffer *buf, size_t n) {
-  memmove(buf->s, buf->s + (buf->len - n), n);
   buf->len -= n;
+  memmove(buf->s, buf->s + n, buf->len);
 }
 
 
