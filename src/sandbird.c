@@ -428,7 +428,6 @@ static void sb_stream_destroy(sb_Stream *st) {
 
 static int sb_stream_recv(sb_Stream *st) {
   for (;;) {
-    sb_Event e;
     char buf[4096];
     int i, sz;
 
@@ -448,6 +447,7 @@ static int sb_stream_recv(sb_Stream *st) {
     /* Write to recv_buf */
     for (i = 0; i < sz; i++) {
       sb_buffer_push_char(&st->recv_buf, buf[i]);
+
       /* Have we received the whole header? */
       if ( 
         st->state == STATE_RECEIVING_HEADER &&
@@ -469,37 +469,37 @@ static int sb_stream_recv(sb_Stream *st) {
           st->expected_recv_len = st->recv_buf.len + str_to_uint(s);
           st->data_idx = st->recv_buf.len;
         } else {
-          st->state = STATE_SENDING_STATUS;
+          goto handle_request;
         }
       }
+
       /* Have we received all the data we're expecting? */
       if (st->expected_recv_len == st->recv_buf.len) {
+        /* Handle request */
+        sb_Event e;
+        int err, n, path_idx;
+        char method[16], path[512], ver[16];
+handle_request:
         st->state = STATE_SENDING_STATUS;
-      }
-    }
-
-    /* End of request? Emit request event if request line is ok */
-    if (st->state == STATE_SENDING_STATUS) {
-      int err, n, path_idx;
-      char method[16], path[512], ver[16];
-      /* Assure recv_buf string is NULL-terminated */
-      err = sb_buffer_null_terminate(&st->recv_buf);
-      if (err) return err;
-      /* Build event */
-      memset(&e, 0, sizeof(e));
-      e.type = SB_EV_REQUEST;
-      /* Get method, path, version */
-      n = sscanf(st->recv_buf.s, "%15s %n%*s %15s", method, &path_idx, ver);
-      /* Was request line valid? Close stream if not */
-      if (n != 2 || !mem_equal(ver, "HTTP", 4)) {
-        sb_stream_close(st);
-      } else {
+        /* Assure recv_buf string is NULL-terminated */
+        err = sb_buffer_null_terminate(&st->recv_buf);
+        if (err) return err;
+        /* Get method, path, version */
+        n = sscanf(st->recv_buf.s, "%15s %n%*s %15s", method, &path_idx, ver);
+        /* Is request line invalid? */
+        if (n != 2 || !mem_equal(ver, "HTTP", 4)) {
+          sb_stream_close(st);
+          return SB_ESUCCESS;
+        }
+        /* Build and emit `request` event */
         url_decode(path, st->recv_buf.s + path_idx, sizeof(path));
+        e.type = SB_EV_REQUEST;
         e.method = method;
         e.path = path;
-        /* Emit event */
         err = sb_stream_emit(st, &e);
         if (err) return err;
+        /* No more data needs to be received (nor should it exist) */
+        return SB_ESUCCESS;
       }
     }
   }
