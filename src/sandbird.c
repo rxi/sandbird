@@ -939,35 +939,36 @@ int sb_poll_server(sb_Server *srv, int timeout) {
     sb_Event e;
     sb_Socket sockfd;
 
-    /* Accept connection */
-    sockfd = accept(srv->sockfd, NULL, NULL);
+    /* Accept connections */
+    while ( (sockfd = accept(srv->sockfd, NULL, NULL)) != INVALID_SOCKET ) {
 
 #ifdef _WIN32
-    /* As the fd_set on windows is an array rather than a bitset, an fd
-     * value can never be too large for it; thus this check is omitted */
+      /* As the fd_set on windows is an array rather than a bitset, an fd
+       * value can never be too large for it; thus this check is omitted */
 #else
-    /* Check FD size, error if it is larger than FD_SETSIZE */
-    if (sockfd > FD_SETSIZE) {
-      close(sockfd);
-      return SB_EFDTOOBIG;
-    }
+      /* Check FD size, error if it is larger than FD_SETSIZE */
+      if (sockfd > FD_SETSIZE) {
+        close(sockfd);
+        return SB_EFDTOOBIG;
+      }
 #endif
 
-    /* Init new stream */
-    st = sb_stream_new(srv, sockfd);
-    if (!st) {
-      close(sockfd);
-      return SB_EOUTOFMEM;
+      /* Init new stream */
+      st = sb_stream_new(srv, sockfd);
+      if (!st) {
+        close(sockfd);
+        return SB_EOUTOFMEM;
+      }
+
+      /* Push stream to list */
+      st->next = srv->streams;
+      srv->streams = st;
+
+      /* Do `connect` event */
+      e.type = SB_EV_CONNECT;
+      err = sb_stream_emit(st, &e);
+      if (err) return err;
     }
-
-    /* Push stream to list */
-    st->next = srv->streams;
-    srv->streams = st;
-
-    /* Do `connect` event */
-    e.type = SB_EV_CONNECT;
-    err = sb_stream_emit(st, &e);
-    if (err) return err;
   }
 
   return SB_ESUCCESS;
