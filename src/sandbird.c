@@ -429,7 +429,7 @@ static void sb_stream_destroy(sb_Stream *st) {
 static int sb_stream_recv(sb_Stream *st) {
   for (;;) {
     char buf[4096];
-    int i, sz;
+    int err, i, sz;
 
     /* Receive data */
     sz = recv(st->sockfd, buf, sizeof(buf) - 1, 0);
@@ -446,7 +446,8 @@ static int sb_stream_recv(sb_Stream *st) {
 
     /* Write to recv_buf */
     for (i = 0; i < sz; i++) {
-      sb_buffer_push_char(&st->recv_buf, buf[i]);
+      err = sb_buffer_push_char(&st->recv_buf, buf[i]);
+      if (err) return err;
 
       /* Have we received the whole header? */
       if ( 
@@ -454,7 +455,6 @@ static int sb_stream_recv(sb_Stream *st) {
         st->recv_buf.len >= 4 &&
         mem_equal(st->recv_buf.s + st->recv_buf.len - 4, "\r\n\r\n", 4)
       ) {
-        int err;
         const char *s;
         /* Update stream's current state */
         st->state = STATE_RECEIVING_REQUEST;
@@ -477,7 +477,7 @@ static int sb_stream_recv(sb_Stream *st) {
       if (st->expected_recv_len == st->recv_buf.len) {
         /* Handle request */
         sb_Event e;
-        int err, n, path_idx;
+        int n, path_idx;
         char method[16], path[512], ver[16];
 handle_request:
         st->state = STATE_SENDING_STATUS;
