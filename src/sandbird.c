@@ -865,7 +865,7 @@ void sb_close_server(sb_Server *srv) {
 int sb_poll_server(sb_Server *srv, int timeout) {
   sb_Stream *st, **st_next;
   fd_set fds_read, fds_write;
-  int max_fd = srv->sockfd;
+  sb_Socket max_fd = srv->sockfd;
   struct timeval tv;
   int err;
 
