@@ -1,4 +1,6 @@
+#ifndef _WIN32
 #define _BSD_SOURCE
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
