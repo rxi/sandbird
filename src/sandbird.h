@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-#define SB_VERSION "0.1.0"
+#define SB_VERSION "0.1.1"
 
 typedef struct sb_Server  sb_Server;
 typedef struct sb_Stream  sb_Stream;
