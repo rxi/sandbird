@@ -22,8 +22,9 @@ static int event_handler(sb_Event *e) {
     sb_send_status(e->stream, 200, "OK");
     sb_send_header(e->stream, "Content-Type", "text/html");
     sb_writef(e->stream,
+              "<!DOCTYPE html>"
               "<html><body>q = '%s'<br><br>"
-              "<form method='post'><input type='text' name='q'></input></form>"
+              "<form method='post'><input type='text' name='q'></form>"
               "</body></html>", buf);
   }
   return SB_RES_OK;
