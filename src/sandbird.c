@@ -170,6 +170,8 @@ static int url_decode(char *dst, const char *src, size_t len) {
     if (src[0] == '%' && src[1] && src[2]) {
       *dst = (hex_to_int(src[1]) << 4) | hex_to_int(src[2]);
       src += 2;
+    } else if (*src == '+') {
+      *dst = ' ';
     } else {
       *dst = *src;
     }
