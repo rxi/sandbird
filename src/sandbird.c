@@ -1,4 +1,4 @@
-/** 
+/**
  * Copyright (c) 2016 rxi
  *
  * This library is free software; you can redistribute it and/or modify it
@@ -328,7 +328,7 @@ static int sb_buffer_vwritef(sb_Buffer *buf, const char *fmt, va_list args) {
           switch (*fmt) {
             case 'f':
             case 'g': sprintf(lbuf, fbuf, va_arg(args, double));    break;
-            case 'c': 
+            case 'c':
             case 'd':
             case 'i': sprintf(lbuf, fbuf, va_arg(args, int));       break;
             case 'u':
@@ -452,7 +452,7 @@ static int sb_stream_recv(sb_Stream *st) {
       if (err) return err;
 
       /* Have we received the whole header? */
-      if ( 
+      if (
         st->state == STATE_RECEIVING_HEADER &&
         st->recv_buf.len >= 4 &&
         mem_equal(st->recv_buf.s + st->recv_buf.len - 4, "\r\n\r\n", 4)
@@ -541,7 +541,7 @@ send_data:
     /* Reached end of file */
     fclose(st->send_fp);
     st->send_fp = NULL;
-  
+
   } else {
     /* No more data left -- disconnect */
     sb_stream_close(st);
@@ -699,7 +699,7 @@ int sb_get_cookie(sb_Stream *st, const char *name, char *dst, size_t len) {
   const char *s = st->recv_buf.s;
   int res = SB_ESUCCESS;
   size_t name_len = strlen(name);
-  
+
   /* Get cookie header */
   s = find_header_value(st->recv_buf.s, "Cookie");
   if (!s) goto fail;
@@ -840,7 +840,7 @@ sb_Server *sb_new_server(const sb_Options *opt) {
   ai = NULL;
 
   return srv;
-  
+
 fail:
   if (ai) freeaddrinfo(ai);
   if (srv) sb_close_server(srv);
