@@ -323,7 +323,7 @@ static int sb_buffer_vwritef(sb_Buffer *buf, const char *fmt, va_list args) {
         default:
           fbuf[0] = '%';
           s = fbuf + 1;
-          while ( !isalpha(*fmt) ) *s++ = *fmt++;
+          while ( !isalpha(*fmt) && *fmt != '%' ) *s++ = *fmt++;
           s[0] = *fmt, s[1] = '\0';
           switch (*fmt) {
             case 'f':
