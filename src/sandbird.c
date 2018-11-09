@@ -594,7 +594,7 @@ int sb_send_header(sb_Stream *st, const char *field, const char *val) {
 int sb_send_file(sb_Stream *st, const char *filename) {
   int err;
   char buf[32];
-  size_t sz;
+  off_t sz;
   FILE *fp = NULL;
   if (st->state > STATE_SENDING_HEADER) {
     return SB_EBADSTATE;
@@ -605,8 +605,8 @@ int sb_send_file(sb_Stream *st, const char *filename) {
 
   /* Get file size and write headers */
   fseek(fp, 0, SEEK_END);
-  sz = ftell(fp);
-  sprintf(buf, "%u", (unsigned) sz);
+  sz = ftello(fp);
+  sprintf(buf, "%ju", (uintmax_t) sz);
   err = sb_send_header(st, "Content-Length", buf);
   if (err) goto fail;
   err = sb_stream_finalize_header(st);
