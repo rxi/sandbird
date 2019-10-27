@@ -25,7 +25,7 @@ pointer to it to `sb_new_server()`. At a minimum the `port` and `handler`
 fields of the `sb_Options` struct should be set.
 ```c
 sb_Server *srv;
-sv_Options opt;
+sb_Options opt;
 
 memset(&opt, 0, sizeof(opt));
 opt.port = "8000";
