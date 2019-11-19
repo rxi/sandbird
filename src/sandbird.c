@@ -288,10 +288,9 @@ static int sb_buffer_push_char(sb_Buffer *buf, char chr) {
 
 
 static int sb_buffer_push_str(sb_Buffer *buf, const char *p, size_t len) {
-  int err;
   size_t orig_len = buf->len;
   while (len) {
-    err = sb_buffer_push_char(buf, *p);
+    int err = sb_buffer_push_char(buf, *p);
     if (err) {
       buf->len = orig_len;
       return err;
@@ -594,7 +593,7 @@ int sb_send_header(sb_Stream *st, const char *field, const char *val) {
 int sb_send_file(sb_Stream *st, const char *filename) {
   int err;
   char buf[32];
-  size_t sz;
+  off_t sz;
   FILE *fp = NULL;
   if (st->state > STATE_SENDING_HEADER) {
     return SB_EBADSTATE;
@@ -605,8 +604,8 @@ int sb_send_file(sb_Stream *st, const char *filename) {
 
   /* Get file size and write headers */
   fseek(fp, 0, SEEK_END);
-  sz = ftell(fp);
-  sprintf(buf, "%u", (unsigned) sz);
+  sz = ftello(fp);
+  sprintf(buf, "%ju", (uintmax_t) sz);
   err = sb_send_header(st, "Content-Length", buf);
   if (err) goto fail;
   err = sb_stream_finalize_header(st);
@@ -674,12 +673,38 @@ int sb_get_header(sb_Stream *st, const char *field, char *dst, size_t len) {
 }
 
 
+int sb_get_payload(sb_Stream *st, void *dst, size_t offset, size_t len) {
+  char *payload = st->recv_buf.s + st->data_idx;
+  char *payload_chunk = payload + offset;
+  size_t payload_size = st->recv_buf.len - st->data_idx;
+  size_t payload_chunk_size = payload_size - offset;
+  size_t nbytes = len < payload_chunk_size ? len : payload_chunk_size;
+  memcpy(dst, (void *) payload_chunk, nbytes);
+  return (payload_chunk_size <= len) ? SB_ESUCCESS : SB_ETRUNCATED;
+}
+
+
+int sb_get_query_string(sb_Stream *st, char *dst, size_t len) {
+  const char *q = NULL;
+
+  /* Extract query string only, discard path & header */
+  q = st->recv_buf.s + strcspn(st->recv_buf.s, "?\r");
+  if (q != NULL && (*q == '?')) {
+    size_t span = strcspn(q, " \t");
+    strncpy(dst, q, span <= len ? span : len);
+    return (span > len) ? SB_ETRUNCATED : SB_ESUCCESS;
+  } else {
+    return SB_ENOTFOUND;
+  }
+}
+
+
 int sb_get_var(sb_Stream *st, const char *name, char *dst, size_t len) {
   const char *q, *s = NULL;
 
   /* Find beginning of query string */
   q = st->recv_buf.s + strcspn(st->recv_buf.s, "?\r");
-  q = (*q == '?') ? (q + 1) : NULL;
+  q = (q && (*q == '?')) ? (q + 1) : NULL;
 
   /* Try to get var from query string, then data string */
   if (q) s = find_var_value(q, name);

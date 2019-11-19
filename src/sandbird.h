@@ -78,8 +78,10 @@ int sb_write(sb_Stream *st, const void *data, size_t len);
 int sb_vwritef(sb_Stream *st, const char *fmt, va_list args);
 int sb_writef(sb_Stream *st, const char *fmt, ...);
 int sb_get_header(sb_Stream *st, const char *field, char *dst, size_t len);
+int sb_get_query_string(sb_Stream *st, char *dst, size_t len);
 int sb_get_var(sb_Stream *st, const char *name, char *dst, size_t len);
 int sb_get_cookie(sb_Stream *st, const char *name, char *dst, size_t len);
+int sb_get_payload(sb_Stream *st, void *dst, size_t offset, size_t len);
 const void *sb_get_multipart(sb_Stream *st, const char *name, size_t *len);
 
 #ifdef __cplusplus
